@@ -1,2 +1,1 @@
-# Schelling
-Thesis
+# Schelling Simulation
