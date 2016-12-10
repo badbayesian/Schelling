@@ -57,10 +57,6 @@ end.tol = .4
 # Attraction zone (center of the city)
 loc = c(height/2, width/2)
 
-# Morgage rate (CHECK NUMBER)
-h = 0.07
-w = 0.04
-
 rate <- data.frame(h,w)
 
 # Struct of schelling process
