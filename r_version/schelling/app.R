@@ -21,9 +21,10 @@ ui <- fluidPage(
                      min = 0,
                      max = 1,
                      value = 0.33),
-         actionButton(
-           inputId = "submit_loc",
-           label = "Submit")
+         actionButton(inputId = "submit_loc",
+           label = "Submit"),
+         actionButton(inputId = "reset",
+           label = "Reset")
       ),
       
       mainPanel(
@@ -36,29 +37,22 @@ server <- function(input, output) {
   
   source(file = paste0(getwd(), "/schelling.R"))
   
-  observeEvent(
-    eventExpr = input[["submit_loc"]],
-    handlerExpr = {
-      print("PRESSED")
-  
+
      output$schelling_plot <- renderPlot({
+       board <- board(height = input$height, width = input$width)
+       plot_board(board)
        
-       grid <- schelling(height = input$height,
-                         width = input$width,
-                         tolerance = input$tolerance)
-  
-       plot <- ggplot(grid) +
-         aes(x = width, y = height, color = as.factor(race)) +
-         geom_point(size = 2.5) +
-         labs(title = "Schelling", x = "", y = "", color = "Race") +
-         theme_bw() +
-         coord_cartesian(xlim = c(0, max(grid$width) + 1),
-                         ylim = c(0, max(grid$height) + 1),
-                         expand = FALSE)
-       print(plot)
+       observeEvent(
+         eventExpr = input[["submit_loc"]],
+         handlerExpr = {
+           print("PRESSED")
+           board <- schelling(board, tolerance = input$tolerance)
+           plot_board(board)
+           
+           }
+         )
+
        })
     }
-  )
-}
 
 shinyApp(ui = ui, server = server)
