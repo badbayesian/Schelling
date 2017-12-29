@@ -56,11 +56,11 @@ race_check <- function(grid, height, width, tolerance){
 #'
 #' @param height int
 #' @param width int
-#' @param tolerence float
+#' @param tolerance float
 #' @param max_iterations int
 #' @param satisfied_agents float
 #' @return grid
-schelling <- function(height = 50, width = 100, tolerence = 0.33,
+schelling <- function(height = 50, width = 100, tolerance = 0.33,
                       max_iterations = 100, satisfied_agents = 0.95){
   number_of_agents <- height*width
   
@@ -69,7 +69,7 @@ schelling <- function(height = 50, width = 100, tolerence = 0.33,
                      satisfied = FALSE,
                      race = sample(3, number_of_agents, replace = TRUE))
   for (i in 1:max_iterations) {
-    grid$satisfied <- race_check(grid, height, width, tolerence)
+    grid$satisfied <- race_check(grid, height, width, tolerance)
     
     if (sum(grid$satisfied)/(number_of_agents) >= satisfied_agents) {
       break

@@ -16,8 +16,8 @@ ui <- fluidPage(
                      min = 10,
                      max = 100,
                      value = 100),
-         sliderInput(inputId = "tolerence",
-                     label = "Tolerence",
+         sliderInput(inputId = "tolerance",
+                     label = "Tolerance",
                      min = 0,
                      max = 1,
                      value = 0.33),
@@ -45,7 +45,7 @@ server <- function(input, output) {
        
        grid <- schelling(height = input$height,
                          width = input$width,
-                         tolerence = input$tolerence)
+                         tolerance = input$tolerance)
   
        plot <- ggplot(grid) +
          aes(x = width, y = height, color = as.factor(race)) +

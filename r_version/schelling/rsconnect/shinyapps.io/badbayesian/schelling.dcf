@@ -1,0 +1,12 @@
+name: schelling
+title: schelling
+username:
+account: badbayesian
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 252265
+bundleId: 1154224
+url: https://badbayesian.shinyapps.io/schelling/
+when: 1514510255.29087
+asMultiple: FALSE
+asStatic: FALSE
