@@ -6,62 +6,50 @@ ui <- fluidPage(
    
    sidebarLayout(
       sidebarPanel(
-         sliderInput(inputId = "height",
-                     label = "Height",
+         sliderInput(inputId = "height", label = "Height",
                      min = 10,
                      max = 100,
                      value = 50),
-         sliderInput(inputId = "width",
-                     label = "Width",
+         sliderInput(inputId = "width", label = "Width",
                      min = 10,
                      max = 100,
                      value = 100),
-         sliderInput(inputId = "tolerance",
-                     label = "Tolerance",
+         sliderInput(inputId = "tolerance", label = "Tolerance",
                      min = 0,
                      max = 1,
                      value = 0.33),
-         actionButton(inputId = "submit_loc",
-           label = "Submit"),
-         actionButton(inputId = "reset",
-           label = "Reset")
+         actionButton(inputId = "submit", label = "Submit"),
+         actionButton(inputId = "reset", label = "Reset")
       ),
       
       mainPanel(
-         plotOutput("schelling_plot")
+        tabsetPanel(type = "tabs", 
+                    tabPanel("Schelling Simulation",
+                             plotOutput("schelling_plot")))
       )
    )
 )
 
 server <- function(input, output) {
-  
   source(file = paste0(getwd(), "/schelling.R"))
   
+  board <- reactiveValues(data = init_board())
+   
+   observeEvent(
+     eventExpr = input$submit,
+     handlerExpr = {
+       board$data = schelling(board$data, tolerance = input$tolerance)}
+     )
+   
+   observeEvent(
+     eventExpr = input$reset,
+     handlerExpr = {
+       board$data = init_board(height = input$height, width = input$width)}
+     )
 
-     output$schelling_plot <- renderPlot({
-       board <- init_board(height = input$height, width = input$width)
-       plot_board(board)
-       
-       observeEvent(
-         eventExpr = input[["reset"]],
-         handlerExpr = {
-           board <- init_board(height = input$height, width = input$width)
-           plot_board(board)
-         }
-       )
-       
-       
-       observeEvent(
-         eventExpr = input[["submit_loc"]],
-         handlerExpr = {
-           print("PRESSED")
-           board <- schelling(board, tolerance = input$tolerance)
-           plot_board(board)
-           
-           }
-         )
-
-       })
-    }
+   output$schelling_plot <- renderPlot({
+     plot_board(board$data)
+     })
+}
 
 shinyApp(ui = ui, server = server)

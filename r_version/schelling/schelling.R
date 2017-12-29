@@ -1,13 +1,13 @@
 library(tidyverse)
 library(utils)
 
-#' neighbors finds the neighborhood for each index
+#' Find coordinates of neighbors for each agent
 #' TODO: allow for arbitrary neighborhood function
 #' 
 #' @param board DataFrame
 #' @param height int
 #' @param width int
-#' @return neighborhood list of neighbors at index i
+#' @return neighborhood (list of neighbors at index i)
 neighbors <- function(board, height, width){
   height_neighbors <- sapply(board$height, function(i) seq(i - 1, i + 1))
   excess_height <- which((height_neighbors == 0) |
@@ -33,7 +33,7 @@ neighbors <- function(board, height, width){
 #' @param height int
 #' @param width int
 #' @param tolerance float
-#' @return satisfied list of bools
+#' @return satisfied (list of bools)
 race_check <- function(board, height, width, tolerance){
   neighborhood <- neighbors(board, height, width)
   
@@ -48,13 +48,14 @@ race_check <- function(board, height, width, tolerance){
   return(satisfied)
 }
 
-#' Process Schelling Algorithm on board
+#' Process Schelling Algorithm on board until 'max_iteration' or
+#' 'satisfied_agents' are met.
 #'
-#' @param board
-#' @param tolerance
-#' @param max_iterations
-#' @param satisfied_agents
-#' @return board
+#' @param board DataFrame
+#' @param tolerance float
+#' @param max_iterations int
+#' @param satisfied_agents flaot
+#' @return board (DataFrame)
 schelling <- function(board, tolerance = 0.33, max_iterations = 100,
                       satisfied_agents = 0.95) {
   height <- max(board$height)
@@ -85,7 +86,7 @@ schelling <- function(board, tolerance = 0.33, max_iterations = 100,
 #'
 #' @param height int
 #' @param width int
-#' @return board
+#' @return board (DataFrame)
 init_board <- function(height = 50, width = 100) {
   number_of_agents <- height*width
   
@@ -100,7 +101,7 @@ init_board <- function(height = 50, width = 100) {
 #' Plot board
 #'
 #' @param board
-#' @return print(plot)
+#' @return ggplot object
 plot_board <- function(board){
   plot <- ggplot(board) +
     aes(x = width, y = height, color = as.factor(race)) +
