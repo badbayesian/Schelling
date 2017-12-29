@@ -37,17 +37,13 @@ neighbors <- function(board, height, width){
 race_check <- function(board, height, width, tolerance){
   neighborhood <- neighbors(board, height, width)
   
-  # TODO optimize with sparse matrix multiplication
   race_counts <- lapply(1:(height*width), function(i)
-    board$height %in% neighborhood[[i]]$height *
-      board$width %in% neighborhood[[i]]$width *
-      board$race)
-  race_counts <- lapply(1:(height*width), function(i)
-    table(race_counts[[i]][race_counts[[i]] != 0]))
+    board$race[(neighborhood[[i]]$width - 1)*height +
+                 neighborhood[[i]]$height])
 
   satisfied <- sapply(1:(height*width), function(i)
-    tolerance <= ((race_counts[[i]][toString(board$race[i])] - 1) /
-                    sum(race_counts[[i]])))
+    tolerance <= ((table(race_counts[[i]])[toString(board$race[i])] - 1) /
+      length(race_counts[[i]])))
 
   return(satisfied)
 }
@@ -90,7 +86,7 @@ schelling <- function(board, tolerance = 0.33, max_iterations = 100,
 #' @param height int
 #' @param width int
 #' @return board
-board <- function(height = 50, width = 100) {
+init_board <- function(height = 50, width = 100) {
   number_of_agents <- height*width
   
   board <- data.frame(expand.grid(height = 1:height, width = 1:width),

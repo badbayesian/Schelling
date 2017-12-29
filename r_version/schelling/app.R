@@ -39,8 +39,17 @@ server <- function(input, output) {
   
 
      output$schelling_plot <- renderPlot({
-       board <- board(height = input$height, width = input$width)
+       board <- init_board(height = input$height, width = input$width)
        plot_board(board)
+       
+       observeEvent(
+         eventExpr = input[["reset"]],
+         handlerExpr = {
+           board <- init_board(height = input$height, width = input$width)
+           plot_board(board)
+         }
+       )
+       
        
        observeEvent(
          eventExpr = input[["submit_loc"]],
