@@ -1,6 +1,16 @@
 library(tidyverse)
 library(utils)
 
+# Schelling process is defined by a DataFrame which is used in a tidy-styled
+# system
+# init_board
+#   - schelling
+#     - race_check
+#       - neighbors
+#   - plot_board
+#   - plot_satisfaction_board
+
+
 #' Find coordinates of neighbors for each agent
 #' TODO: allow for arbitrary neighborhood function
 #' 
@@ -33,7 +43,7 @@ neighbors <- function(board, height, width){
 #' @param height int
 #' @param width int
 #' @param tolerance float
-#' @return satisfied (list of bools)
+#' @return satisfied (DataFrame column of bools)
 race_check <- function(board, height, width, tolerance){
   neighborhood <- neighbors(board, height, width)
   
@@ -42,14 +52,14 @@ race_check <- function(board, height, width, tolerance){
                  neighborhood[[i]]$height])
 
   satisfied <- sapply(1:(height*width), function(i)
-    tolerance <= ((table(race_counts[[i]])[toString(board$race[i])] - 1) /
+    tolerance <= ((tabulate(race_counts[[i]])[board$race[i]] - 1) /
       length(race_counts[[i]])))
 
   return(satisfied)
 }
 
-#' Process Schelling Algorithm on board until 'max_iteration' or
-#' 'satisfied_agents' are met.
+#' Process Schelling Algorithm on board until `max_iterations`or
+#' `satisfied_agents` are met.
 #'
 #' @param board DataFrame
 #' @param tolerance float
@@ -86,14 +96,16 @@ schelling <- function(board, tolerance = 0.33, max_iterations = 100,
 #'
 #' @param height int
 #' @param width int
+#' @param num_of_races int
 #' @return board (DataFrame)
-init_board <- function(height = 50, width = 100) {
+init_board <- function(height = 50, width = 100, num_of_races = 3) {
   number_of_agents <- height*width
   
   board <- data.frame(expand.grid(height = 1:height, width = 1:width),
                      empty = FALSE,
                      satisfied = FALSE,
-                     race = sample(3, number_of_agents, replace = TRUE))
+                     race = sample(num_of_races, number_of_agents,
+                                   replace = TRUE))
   
   return(board)
 }
@@ -111,7 +123,43 @@ plot_board <- function(board){
     coord_cartesian(xlim = c(0, max(board$width) + 1),
                     ylim = c(0, max(board$height) + 1),
                     expand = FALSE)
-  print(plot)
+  return(plot)
 }
 
+#' Plot satisfaction board
+#'
+#' @param board
+#' @return ggplot object
+plot_satisfaction_board <- function(board){
+  plot <- ggplot(board) +
+    aes(x = width, y = height, color = satisfied) +
+    geom_point(size = 2.5) +
+    labs(title = "Schelling", x = "", y = "", color = "Satisfied") +
+    theme_bw() +
+    coord_cartesian(xlim = c(0, max(board$width) + 1),
+                    ylim = c(0, max(board$height) + 1),
+                    expand = FALSE)
+  return(plot)
+}
 
+#'
+#'
+segregation_distribution <- function(board){
+  height <- max(board$height)
+  width <- max(board$width)
+  
+  neighborhood <- neighbors(board, height, width)
+  
+  race_counts <- lapply(1:(height*width), function(i)
+    board$race[(neighborhood[[i]]$width - 1)*height +
+                 neighborhood[[i]]$height])
+  
+  matching <- sapply(1:(height*width), function(i)
+    tabulate(race_counts[[i]])[board$race[i]] - 1)
+  
+  moments <- data.frame(race = board$race, matching) %>%
+    group_by(race) %>%
+    summarise(distribution = list(tabulate(matching)))
+
+  return(moments)
+}

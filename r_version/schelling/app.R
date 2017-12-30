@@ -14,6 +14,10 @@ ui <- fluidPage(
                      min = 10,
                      max = 100,
                      value = 100),
+         sliderInput(inputId = "num_of_races", label = "Number of Races",
+                     min = 2,
+                     max = 5,
+                     value = 3),
          sliderInput(inputId = "tolerance", label = "Tolerance",
                      min = 0,
                      max = 1,
@@ -25,7 +29,9 @@ ui <- fluidPage(
       mainPanel(
         tabsetPanel(type = "tabs", 
                     tabPanel("Schelling Simulation",
-                             plotOutput("schelling_plot")))
+                             plotOutput("schelling_plot")),
+                    tabPanel("Satisfaction",
+                             plotOutput("satisfaction_plot")))
       )
    )
 )
@@ -44,12 +50,17 @@ server <- function(input, output) {
    observeEvent(
      eventExpr = input$reset,
      handlerExpr = {
-       board$data = init_board(height = input$height, width = input$width)}
+       board$data = init_board(height = input$height, width = input$width,
+                               num_of_races = input$num_of_races)}
      )
 
    output$schelling_plot <- renderPlot({
      plot_board(board$data)
      })
+   
+   output$satisfaction_plot <- renderPlot({
+     plot_satisfaction_board(board$data)
+   })
 }
 
 shinyApp(ui = ui, server = server)
