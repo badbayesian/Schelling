@@ -158,8 +158,7 @@ plot_satisfaction_board <- function(board){
     theme_bw() +
     coord_cartesian(xlim = c(0, max(board$width) + 1),
                     ylim = c(0, max(board$height) + 1),
-                    expand = FALSE) +
-    scale_color_discrete(na.value = 'transparent')
+                    expand = FALSE)
 
   return(plot)
 }
