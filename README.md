@@ -15,3 +15,4 @@ board <- init_board(height = 50, width = 100, race_distribution = c(0.5, 0.5), f
 
 plot_board(board)
 ```
+![](examples/R_board_plot.png)

@@ -247,5 +247,4 @@ vignettes/*.pdf
 *.csv
 
 # Plots
-*.png
 .Rproj.user
