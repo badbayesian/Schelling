@@ -1,4 +1,5 @@
 library(shiny)
+library(shinycssloaders)
 
 ui <- fluidPage(
 
@@ -14,22 +15,24 @@ ui <- fluidPage(
                      min = 10,
                      max = 100,
                      value = 100),
-         sliderInput(inputId = "num_of_races", label = "Number of Races",
-                     min = 2,
-                     max = 5,
-                     value = 3),
          sliderInput(inputId = "tolerance", label = "Tolerance",
                      min = 0,
                      max = 1,
                      value = 0.33),
-         actionButton(inputId = "submit", label = "Submit"),
+         textInput(inputId = "race_distribution", label = "Race Distribution",
+                   value = "0.5, 0.5"),
+         sliderInput(inputId = "filled", label = "Spots Filled",
+                     min = 0,
+                     max = 1,
+                     value = 0.95),
+         actionButton(inputId = "simulate", label = "Simulate"),
          actionButton(inputId = "reset", label = "Reset")
       ),
       
       mainPanel(
         tabsetPanel(type = "tabs", 
                     tabPanel("Schelling Simulation",
-                             plotOutput("schelling_plot")),
+                             withSpinner(plotOutput("schelling_plot"))),
                     tabPanel("Satisfaction",
                              plotOutput("satisfaction_plot")))
       )
@@ -42,7 +45,7 @@ server <- function(input, output) {
   board <- reactiveValues(data = init_board())
    
    observeEvent(
-     eventExpr = input$submit,
+     eventExpr = input$simulate,
      handlerExpr = {
        board$data = schelling(board$data, tolerance = input$tolerance)}
      )
@@ -50,8 +53,10 @@ server <- function(input, output) {
    observeEvent(
      eventExpr = input$reset,
      handlerExpr = {
+       races <- as.numeric(strsplit(input$race_distribution, ",")[[1]])
        board$data = init_board(height = input$height, width = input$width,
-                               num_of_races = input$num_of_races)}
+                               race_distribution = races,
+                               filled = input$filled)}
      )
 
    output$schelling_plot <- renderPlot({

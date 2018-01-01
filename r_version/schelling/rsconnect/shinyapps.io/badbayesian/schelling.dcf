@@ -5,8 +5,8 @@ account: badbayesian
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 252265
-bundleId: 1155247
+bundleId: 1157382
 url: https://badbayesian.shinyapps.io/schelling/
-when: 1514583476.56406
+when: 1514775539.77117
 asMultiple: FALSE
 asStatic: FALSE
