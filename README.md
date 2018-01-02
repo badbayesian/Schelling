@@ -1,6 +1,6 @@
 # Schelling Simulation
 
-This repository holds my Undergraduate Economic Thesis for the University of Chicago in 2016. I am currently updating the code so that it is more readable and allowing full access to the model in the shiny app. Regardless, the old code can be found [here](https://github.com/badbayesian/schelling_extension/blob/master/r_version/schelling_old.R)
+This repository holds my Undergraduate Economic Thesis for the University of Chicago in 2016. I am currently updating the code so that it is more readable and allowing full access to the model in the shiny app. Regardless, the old code can be found [here](https://github.com/badbayesian/schelling_extension/blob/master/r_version/schelling_old.R).
 
 [Shiny App](https://badbayesian.shinyapps.io/schelling/)
 

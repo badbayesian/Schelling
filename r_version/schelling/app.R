@@ -19,8 +19,20 @@ ui <- fluidPage(
                      min = 0,
                      max = 1,
                      value = 0.33),
+         sliderInput(inputId = "neighborhood_size",
+                     label = "Neighborhood Size",
+                     min = 1,
+                     max = 5,
+                     value = 1),
          textInput(inputId = "race_distribution", label = "Race Distribution",
                    value = "0.5, 0.5"),
+         textInput(inputId = "business_center", label = "Business Center",
+                   value = "1, 1"),
+         sliderInput(inputId = "max_distance_penalty",
+                     label = "Max Distance Penalty",
+                     min = 0,
+                     max = 1,
+                     value = 0),
          sliderInput(inputId = "filled", label = "Spots Filled",
                      min = 0,
                      max = 1,
@@ -47,7 +59,12 @@ server <- function(input, output) {
    observeEvent(
      eventExpr = input$simulate,
      handlerExpr = {
-       board$data = schelling(board$data, tolerance = input$tolerance)}
+       business_center <- as.numeric(strsplit(input$business_center, ",")[[1]])
+       board$data = schelling(board$data, tolerance = input$tolerance,
+                              neighborhood_size = input$neighborhood_size,
+                              business_center = business_center,
+                              max_distance_penalty =
+                                input$max_distance_penalty)}
      )
    
    observeEvent(

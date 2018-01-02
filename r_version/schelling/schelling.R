@@ -26,7 +26,7 @@ race_check <- function(board, neighborhood, height, tolerance){
 
   satisfied <- sapply(1:nrow(board), function(i)
     tolerance <= ((tabulate(race_counts[[i]])[board$race[i]] - 1) /
-      (length(race_counts[[i]]) - 1)))
+      (length(race_counts[[i]]) - 1) - board$distance[i]))
 
   return(satisfied)
 }
@@ -71,11 +71,18 @@ neighbors <- function(board, height, width, neighborhood_size = 1){
 #' @param satisfied_agents flaot
 #' @return board (DataFrame)
 schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
-                      max_iterations = 100, satisfied_agents = 0.95) {
+                      max_iterations = 100, satisfied_agents = 0.95,
+                      business_center = NA, max_distance_penalty = .5) {
   height <- max(board$height)
   width <- max(board$width)
   number_of_agents <- sum(tabulate(board$race))
   neighborhood <- neighbors(board, height, width, neighborhood_size)
+  
+  if (!is.na(business_center[1])) {
+    distance <- sqrt((board$width - business_center[1])^2 +
+                       (board$height - business_center[2])^2)
+    board$distance <- distance/max(distance)*max_distance_penalty
+  }
   
   for (i in 1:max_iterations) {
     board$empty <- is.na(board$race)
@@ -124,6 +131,7 @@ init_board <- function(height = 50, width = 100,
   board <- data.frame(expand.grid(height = 1:height, width = 1:width),
                      empty = FALSE,
                      satisfied = FALSE,
+                     distance = 0,
                      race = sample(agents))
   
   return(board)
