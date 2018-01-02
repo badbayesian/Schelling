@@ -44,9 +44,13 @@ ui <- fluidPage(
       mainPanel(
         tabsetPanel(type = "tabs", 
                     tabPanel("Schelling Simulation",
-                             withSpinner(plotOutput("schelling_plot"))),
+                             withSpinner(plotOutput("schelling_plot",
+                                                    width = "1000px",
+                                                    height = "600px"))),
                     tabPanel("Satisfaction",
-                             plotOutput("satisfaction_plot")))
+                             plotOutput("satisfaction_plot",
+                                        width = "1000px",
+                                        height = "600px")))
       )
    )
 )

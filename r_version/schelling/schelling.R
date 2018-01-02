@@ -144,7 +144,7 @@ init_board <- function(height = 50, width = 100,
 plot_board <- function(board){
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = as.factor(race)) +
-    geom_point(size = 2.5) +
+    geom_point(size = 4) +
     labs(title = "Schelling", x = "", y = "", color = "Race") +
     theme_bw() +
     coord_cartesian(xlim = c(0, max(board$width) + 1),
@@ -161,7 +161,7 @@ plot_board <- function(board){
 plot_satisfaction_board <- function(board){
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = satisfied) +
-    geom_point(size = 2.5) +
+    geom_point(size = 4) +
     labs(title = "Schelling", x = "", y = "", color = "Satisfied") +
     theme_bw() +
     coord_cartesian(xlim = c(0, max(board$width) + 1),
