@@ -131,7 +131,7 @@ server <- function(input, output) {
      })
    
    output$satisfaction_plot <- renderPlot({
-     plot_satisfaction_board(board$data)
+     plot_satisfaction_board(board$data, size = input$size)
    })
 }
 

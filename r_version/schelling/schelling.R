@@ -17,6 +17,7 @@ library(utils)
 #' @param height int
 #' @param width int
 #' @param tolerance float
+#' @param penalties list (float)
 #' @return satisfied (DataFrame column of bools)
 satisfaction_check <- function(board, neighborhood, height, tolerance,
                                penalties){
@@ -76,6 +77,10 @@ neighbors <- function(board, height, width, neighborhood_size = 1){
 #' @param tolerance float
 #' @param max_iterations int
 #' @param satisfied_agents flaot
+#' @param business_center list (int)
+#' @param max_race_penalty float
+#' @param max_wealth_penalty float
+#' @param max_distance_penalty float
 #' @return board (DataFrame)
 schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
                       max_iterations = 100, satisfied_agents = 0.95,
@@ -127,8 +132,9 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
 #'
 #' @param height int
 #' @param width int
-#' @param race_distribution list (float)
 #' @param filled float
+#' @param race_distribution list (float)
+#' @param weath_distribution list (float)
 #' @return board (DataFrame)
 init_board <- function(height = 50, width = 100, filled = 0.95,
                        race_distribution = c(0.5, 0.5),
@@ -167,10 +173,11 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
 
 #' Plot board with wealth as shape and race as color
 #'
-#' @param board
-#' @param size 
+#' @param board DataFrame
+#' @param size int
+#' @param show_wealth bool
 #' @return ggplot object
-plot_board <- function(board, size = 4, show_wealth = TRUE){
+plot_board <- function(board, size = 2, show_wealth = FALSE){
   if (show_wealth) {
     plot <- ggplot(na.omit(board)) +
       aes(x = width, y = height,
@@ -199,12 +206,13 @@ plot_board <- function(board, size = 4, show_wealth = TRUE){
 
 #' Plot satisfaction board
 #'
-#' @param board
+#' @param board DataFrame
+#' @param size int
 #' @return ggplot object
-plot_satisfaction_board <- function(board){
+plot_satisfaction_board <- function(board, size = 2){
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = satisfied) +
-    geom_point(size = 4) +
+    geom_point(size = size) +
     labs(title = "Schelling", x = "", y = "", color = "Satisfied") +
     theme_bw() +
     coord_cartesian(xlim = c(0, max(board$width) + 1),
