@@ -23,11 +23,11 @@ satisfaction_check <- function(board, neighborhood, height, tolerance){
   race_counts <- lapply(1:nrow(board), function(i)
     board$race[(neighborhood[[i]]$width - 1)*height +
                  neighborhood[[i]]$height])
-
+  
   satisfied <- sapply(1:nrow(board), function(i)
     tolerance <= ((tabulate(race_counts[[i]])[board$race[i]] - 1) /
-      (length(race_counts[[i]]) - 1) - board$distance[i]))
-
+                    (length(race_counts[[i]]) - 1) - board$distance[i]))
+  
   return(satisfied)
 }
 
@@ -106,10 +106,10 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
     
     available_agents <- bind_rows(unsatisfied_agents, empty_spots)
     
-    board[board$empty == TRUE,  c('race', 'wealth')] <- sample_n(available_agents,
-                                                                 )
+    board[board$empty == TRUE,  c('race', 'wealth')] <- available_agents %>%
+      sample_n(size = nrow(.))
   }
-
+  
   return(board)
 }
 
@@ -140,18 +140,18 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
   
   number_of_empty <- height*width - sum(number_per_race)
   agent_race <- c(rep(NA, number_of_empty),
-                   rep(1:races, number_per_race[1:races]))
+                  rep(1:races, number_per_race[1:races]))
   agent_wealth <- rep(1:wealth_levels, number_per_wealth[1:wealth_levels])
   
   
   board <- data.frame(expand.grid(height = 1:height, width = 1:width),
-                     empty = FALSE,
-                     satisfied = FALSE,
-                     distance = 0,
-                     race = sample(agent_race))
+                      empty = FALSE,
+                      satisfied = FALSE,
+                      distance = 0,
+                      race = sample(agent_race))
   
   board$wealth[!is.na(board$race)] <- sample(agent_wealth)
-
+  
   return(board)
 }
 
@@ -162,13 +162,13 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
 plot_board <- function(board){
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = as.factor(race)) +
-    geom_point(size = 2) +
+    geom_point(size = 4) +
     labs(title = "Schelling", x = "", y = "", color = "Race") +
     theme_bw() +
     coord_cartesian(xlim = c(0, max(board$width) + 1),
                     ylim = c(0, max(board$height) + 1),
                     expand = FALSE)
-
+  
   return(plot)
 }
 
@@ -185,7 +185,7 @@ plot_satisfaction_board <- function(board){
     coord_cartesian(xlim = c(0, max(board$width) + 1),
                     ylim = c(0, max(board$height) + 1),
                     expand = FALSE)
-
+  
   return(plot)
 }
 
@@ -207,6 +207,6 @@ segregation_distribution <- function(board){
   moments <- data.frame(race = board$race, matching) %>%
     group_by(race) %>%
     summarise(distribution = list(tabulate(matching)))
-
+  
   return(moments)
 }
