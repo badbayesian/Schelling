@@ -18,16 +18,23 @@ library(utils)
 #' @param width int
 #' @param tolerance float
 #' @return satisfied (DataFrame column of bools)
-satisfaction_check <- function(board, neighborhood, height, tolerance){
+satisfaction_check <- function(board, neighborhood, height, tolerance,
+                               penalties){
   
-  race_counts <- lapply(1:nrow(board), function(i)
-    board$race[(neighborhood[[i]]$width - 1)*height +
-                 neighborhood[[i]]$height])
+  neighbor_counts <- lapply(1:nrow(board), function(i)
+    data.frame(race = board$race[(neighborhood[[i]]$width - 1)*height +
+                                   neighborhood[[i]]$height],
+               wealth = board$wealth[(neighborhood[[i]]$width - 1)*height +
+                                       neighborhood[[i]]$height]))
   
   satisfied <- sapply(1:nrow(board), function(i)
-    tolerance <= ((tabulate(race_counts[[i]])[board$race[i]] - 1) /
-                    (length(race_counts[[i]]) - 1) - board$distance[i]))
-  
+    tolerance <= (
+      penalties[1] * (tabulate(neighbor_counts[[i]]$race)[board$race[i]] - 1) /
+        (nrow(neighbor_counts[[i]]) - 1)) +
+      penalties[2] * ((tabulate(neighbor_counts[[i]]$wealth)[board$wealth[i]] - 1) /
+         (nrow(neighbor_counts[[i]]) - 1)) -
+      board$distance[i])
+
   return(satisfied)
 }
 
@@ -72,12 +79,14 @@ neighbors <- function(board, height, width, neighborhood_size = 1){
 #' @return board (DataFrame)
 schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
                       max_iterations = 100, satisfied_agents = 0.95,
-                      business_center = NA, max_distance_penalty = .5) {
+                      business_center = NA, max_race_penalty = 1,
+                      max_wealth_penalty = 0, max_distance_penalty = 0) {
   height <- max(board$height)
   width <- max(board$width)
   number_of_agents <- sum(tabulate(board$race))
   neighborhood <- neighbors(board = board, height = height, width = width,
                             neighborhood_size = neighborhood_size)
+  penalties <- c(max_race_penalty, max_wealth_penalty)
   
   if (!is.na(business_center[1])) {
     distance <- sqrt((board$width - business_center[1])^2 +
@@ -90,7 +99,8 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
     board$satisfied <- satisfaction_check(board = board,
                                           neighborhood = neighborhood,
                                           height = height,
-                                          tolerance = tolerance)
+                                          tolerance = tolerance,
+                                          penalties = penalties)
     
     if (sum(na.omit(board$satisfied))/(number_of_agents) >= satisfied_agents) {
       break
@@ -155,19 +165,34 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
   return(board)
 }
 
-#' Plot board
+#' Plot board with wealth as shape and race as color
 #'
 #' @param board
+#' @param size 
 #' @return ggplot object
-plot_board <- function(board){
-  plot <- ggplot(na.omit(board)) +
-    aes(x = width, y = height, color = as.factor(race)) +
-    geom_point(size = 4) +
-    labs(title = "Schelling", x = "", y = "", color = "Race") +
-    theme_bw() +
-    coord_cartesian(xlim = c(0, max(board$width) + 1),
-                    ylim = c(0, max(board$height) + 1),
-                    expand = FALSE)
+plot_board <- function(board, size = 4, show_wealth = TRUE){
+  if (show_wealth) {
+    plot <- ggplot(na.omit(board)) +
+      aes(x = width, y = height,
+          color = as.factor(race), shape = as.factor(wealth)) +
+      geom_point(size = size) +
+      labs(title = "Schelling", x = "", y = "",
+           color = "Race", shape = "Wealth") +
+      theme_bw() +
+      coord_cartesian(xlim = c(0, max(board$width) + 1),
+                      ylim = c(0, max(board$height) + 1),
+                      expand = FALSE)
+  }
+  else {
+    plot <- ggplot(na.omit(board)) +
+      aes(x = width, y = height, color = as.factor(race)) +
+      geom_point(size = size) +
+      labs(title = "Schelling", x = "", y = "", color = "Race") +
+      theme_bw() +
+      coord_cartesian(xlim = c(0, max(board$width) + 1),
+                      ylim = c(0, max(board$height) + 1),
+                      expand = FALSE)
+  }
   
   return(plot)
 }
