@@ -6,7 +6,7 @@ library(utils)
 # init_board
 #   - schelling
 #     - neighbors
-#     - race_check
+#     - satisfaction_check
 #   - plot_board
 #   - plot_satisfaction_board
 
@@ -18,7 +18,7 @@ library(utils)
 #' @param width int
 #' @param tolerance float
 #' @return satisfied (DataFrame column of bools)
-race_check <- function(board, neighborhood, height, tolerance){
+satisfaction_check <- function(board, neighborhood, height, tolerance){
   
   race_counts <- lapply(1:nrow(board), function(i)
     board$race[(neighborhood[[i]]$width - 1)*height +
@@ -76,7 +76,8 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
   height <- max(board$height)
   width <- max(board$width)
   number_of_agents <- sum(tabulate(board$race))
-  neighborhood <- neighbors(board, height, width, neighborhood_size)
+  neighborhood <- neighbors(board = board, height = height, width = width,
+                            neighborhood_size = neighborhood_size)
   
   if (!is.na(business_center[1])) {
     distance <- sqrt((board$width - business_center[1])^2 +
@@ -86,7 +87,10 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
   
   for (i in 1:max_iterations) {
     board$empty <- is.na(board$race)
-    board$satisfied <- race_check(board, neighborhood, height, tolerance)
+    board$satisfied <- satisfaction_check(board = board,
+                                          neighborhood = neighborhood,
+                                          height = height,
+                                          tolerance = tolerance)
     
     if (sum(na.omit(board$satisfied))/(number_of_agents) >= satisfied_agents) {
       break
@@ -94,12 +98,16 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
     
     unsatisfied_agents <- board %>%
       filter(satisfied == FALSE) %>%
-      select(race)
+      select(race, wealth)
     board$empty <- !board$satisfied | is.na(board$race)
-    empty_spots <- sum(board$empty)
-    fill_spots <- c(unsatisfied_agents$race,
-                    rep(NA, empty_spots - length(unsatisfied_agents$race)))
-    board$race[board$empty == TRUE] <- sample(fill_spots)
+    
+    empty_spots <- rep(NA, sum(board$empty) - nrow(unsatisfied_agents))
+    empty_spots <- data.frame(race = empty_spots, wealth = empty_spots)
+    
+    available_agents <- bind_rows(unsatisfied_agents, empty_spots)
+    
+    board[board$empty == TRUE,  c('race', 'wealth')] <- sample_n(available_agents,
+                                                                 )
   }
 
   return(board)
@@ -112,28 +120,38 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
 #' @param race_distribution list (float)
 #' @param filled float
 #' @return board (DataFrame)
-init_board <- function(height = 50, width = 100,
-                       race_distribution = c(0.5, 0.5), filled = 0.95) {
+init_board <- function(height = 50, width = 100, filled = 0.95,
+                       race_distribution = c(0.5, 0.5),
+                       wealth_distribution = c(0.10, 0.70, 0.20)) {
   
   if (sum(race_distribution) > 1) {
     stop("Race distribution needs to be equal to or less than 1.")
   }
   
-  different_agents <- length(race_distribution)
-  number_of_agents <- filled*height*width*race_distribution
-  number_of_agents <- sapply(1:different_agents, function(i)
-    round(number_of_agents[i]))
-  number_of_empty <- height*width - sum(number_of_agents)
-  agents <- c(rep(NA, number_of_empty),
-             rep(1:different_agents, number_of_agents[1:different_agents]))
+  if (sum(wealth_distribution) > 1) {
+    stop("Wealth distribution needs to be equal to or less than 1.")
+  }
+  
+  races <- length(race_distribution)
+  number_per_race <- round(filled*height*width*race_distribution)
+  
+  wealth_levels <- length(wealth_distribution)
+  number_per_wealth <- round(filled*height*width*wealth_distribution)
+  
+  number_of_empty <- height*width - sum(number_per_race)
+  agent_race <- c(rep(NA, number_of_empty),
+                   rep(1:races, number_per_race[1:races]))
+  agent_wealth <- rep(1:wealth_levels, number_per_wealth[1:wealth_levels])
   
   
   board <- data.frame(expand.grid(height = 1:height, width = 1:width),
                      empty = FALSE,
                      satisfied = FALSE,
                      distance = 0,
-                     race = sample(agents))
+                     race = sample(agent_race))
   
+  board$wealth[!is.na(board$race)] <- sample(agent_wealth)
+
   return(board)
 }
 
@@ -144,7 +162,7 @@ init_board <- function(height = 50, width = 100,
 plot_board <- function(board){
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = as.factor(race)) +
-    geom_point(size = 4) +
+    geom_point(size = 2) +
     labs(title = "Schelling", x = "", y = "", color = "Race") +
     theme_bw() +
     coord_cartesian(xlim = c(0, max(board$width) + 1),
