@@ -13,8 +13,8 @@ library(tidyverse)
 #' `tolerance`.
 #'
 #' @param board DataFrame
+#' @param neighborhood list (int) of neighbors at index i
 #' @param height int
-#' @param width int
 #' @param tolerance float
 #' @param penalties list (float)
 #' @return satisfied (DataFrame column of bools)
@@ -22,25 +22,30 @@ satisfaction_check <- function(board, neighborhood, height, tolerance,
                                penalties){
   
   neighbor_counts <- lapply(1:nrow(board), function(i)
-    cbind(race = board$race[(neighborhood[[i]]$width - 1)*height +
-                                   neighborhood[[i]]$height],
-               wealth = board$wealth[(neighborhood[[i]]$width - 1)*height +
-                                       neighborhood[[i]]$height]))
+    cbind(
+      race = board$race[(neighborhood[[i]]$width - 1)*height +
+                          neighborhood[[i]]$height],
+      wealth = board$wealth[(neighborhood[[i]]$width - 1)*height +
+                              neighborhood[[i]]$height ]))
   
   satisfied <- sapply(1:nrow(board), function(i)
     tolerance <= (
+      # Race Matching
       penalties[1] *
         (tabulate(neighbor_counts[[i]][ ,1])[board$race[i]] - 1) /
         (nrow(neighbor_counts[[i]]) - 1)) +
+      # Weath Matching
       penalties[2] *
       ((tabulate(neighbor_counts[[i]][ ,2])[board$wealth[i]] - 1) /
          (nrow(neighbor_counts[[i]]) - 1)) -
+      # Distance from business center
       board$distance[i])
 
   return(satisfied)
 }
 
-#' Find coordinates of neighbors for each agent
+#' Find coordinates of neighbors (morse/queen) for each agent.
+#' 
 #' TODO: allow for arbitrary neighborhood function (non-morse neighborhoods)
 #' 
 #' @param board DataFrame
@@ -90,16 +95,21 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
   height <- max(board$height)
   width <- max(board$width)
   number_of_agents <- sum(tabulate(board$race))
-  neighborhood <- neighbors(board = board, height = height, width = width,
+  neighborhood <- neighbors(board = board,
+                            height = height,
+                            width = width,
                             neighborhood_size = neighborhood_size)
   penalties <- c(max_race_penalty, max_wealth_penalty)
   
+  # Checks if business center exists to set distance penalty
   if (!is.na(business_center[1])) {
+    #' Euclidian distance (change to manhattan?)
     distance <- sqrt((board$width - business_center[1])^2 +
                        (board$height - business_center[2])^2)
     board$distance <- distance/max(distance)*max_distance_penalty
   }
   
+  # TODO: break schelling process to get transition states for plotting
   for (i in 1:max_iterations) {
     board$empty <- is.na(board$race)
     board$satisfied <- satisfaction_check(board = board,
@@ -129,7 +139,11 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
   return(board)
 }
 
-#' Initialize schelling board
+#' Initialize Schelling board.
+#' 
+#' TODO: wealth distribution is currently discretized and non-ordered, like 
+#' race. Perhaps, wealth should be considered at least with an ordinal
+#' component. This would require an important change to `satisfaction_check`.
 #'
 #' @param height int
 #' @param width int
@@ -149,6 +163,10 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
     stop("Wealth distribution needs to be equal to or less than 1.")
   }
   
+  
+  # Slight bug when rounding which mismatches the number of race and wealth
+  # agents. This carries down to the sampling where it's not entirely clear how
+  # sampling is done if the length is too long. 
   races <- length(race_distribution)
   number_per_race <- round(filled*height*width*race_distribution)
   
@@ -172,7 +190,7 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
   return(board)
 }
 
-#' Plot board with wealth as shape and race as color
+#' Plot board with race as color and wealth as shape.
 #'
 #' @param board DataFrame
 #' @param size int
@@ -205,7 +223,7 @@ plot_board <- function(board, size = 2, show_wealth = FALSE){
   return(plot)
 }
 
-#' Plot satisfaction board
+#' Plot satisfaction board.
 #'
 #' @param board DataFrame
 #' @param size int
@@ -223,28 +241,49 @@ plot_satisfaction_board <- function(board, size = 2){
   return(plot)
 }
 
-#'
-#'
-segregation_distribution <- function(board){
+#' Calculates the porportion of matching neighbors.
+#' 
+#' The schelling process can be conceived as binomial process in which the
+#' independence condition is broken in a complicated manner. By comparing, how
+#' the distributions compare, we can estimate a dispersion component for the
+#' binomial process which can hopefully approximate the schelling process.
+#' 
+#' TODO: varying neighborhood size
+#' 
+#' @param board DataFrame
+#' @param variable string
+#' @return ggplot object
+segregation_distribution <- function(board, variable = 'race'){
   height <- max(board$height)
   width <- max(board$width)
   
-  neighborhood <- neighbors(board, height, width)
+  neighborhood <- neighbors(board, height, width, neighborhood_size = 1)
   
-  race_counts <- lapply(1:nrow(board), function(i)
-    board$race[(neighborhood[[i]]$width - 1)*height +
-                 neighborhood[[i]]$height])
+  counts <- lapply(1:nrow(board), function(i)
+    board[(neighborhood[[i]]$width - 1)*height + neighborhood[[i]]$height,
+          variable])
   
   matching <- sapply(1:nrow(board), function(i)
-    tabulate(race_counts[[i]])[board$race[i]] - 1)
+    tabulate(counts[[i]])[board[i, variable]] - 1)
   
-  moments <- data.frame(race = board$race, matching) %>%
-    group_by(race) %>%
-    summarise(distribution = list(tabulate(matching)))
+  moments <- data.frame(board[variable], matching) %>%
+    group_by_at(variable) %>%
+    summarise(distribution = list(table(matching))) %>%
+    filter_at(vars(variable), any_vars(!is.na(.)))
+
+  match_lengths <- sapply(1:nrow(moments), function(i)
+    length(moments$distribution[[i]]))
   
-  races = paste0('race_', seq(1, length(moments$distribution) - 1))
-   x <- data.frame(matching = 0:8, moments$distribution)
-   colnames(x) <- c("matching", races, 'empty')
+  values <- unlist(lapply(1:nrow(moments), function(i) moments$distribution[[i]]))
+  data <- data.frame(variable = as.factor(rep(1:nrow(moments), match_lengths)),
+                     x = names(values),
+                     y = values)
   
-  return(moments)
+  plot <- ggplot(data) + aes(x = x, y = y, color = variable, group = variable) +
+    geom_point() + geom_line() +
+    labs(title = "Schelling Neighborhood Count", x = "Neighbors",
+         y = "Count", color = variable) +
+    theme_bw()
+  
+  return(plot)
 }

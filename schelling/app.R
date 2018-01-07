@@ -84,9 +84,17 @@ ui <- dashboardPage(
                                                 width = "82%",
                                                 height = "600px"))),
                 tabPanel("Satisfaction",
-                         plotOutput("satisfaction_plot",
-                                    width = "82%",
-                                    height = "600px"))
+                         withSpinner(plotOutput("satisfaction_plot",
+                                                width = "82%",
+                                                height = "600px"))),
+                tabPanel("Race Distribution",
+                         withSpinner(plotOutput("segregation_race_plot",
+                                                width = "82%",
+                                                height = "600px"))),
+                tabPanel("Wealth Distribution",
+                         withSpinner(plotOutput("segregation_wealth_plot",
+                                                width = "82%",
+                                                height = "600px")))
     )
   )
 )
@@ -101,6 +109,7 @@ server <- function(input, output) {
    observeEvent(
      eventExpr = input$simulate,
      handlerExpr = {
+       # This needs a spinner show on output$schelling when calculating
        business_center <- as.numeric(strsplit(input$business_center, ",")[[1]])
        board$data = schelling(board$data,
                               neighborhood_size = input$neighborhood_size,
@@ -132,6 +141,14 @@ server <- function(input, output) {
    
    output$satisfaction_plot <- renderPlot({
      plot_satisfaction_board(board$data, size = input$size)
+   })
+   
+   output$segregation_race_plot <- renderPlot({
+     segregation_distribution(board$data, variable = "race")
+   })
+   
+   output$segregation_wealth_plot <- renderPlot({
+     segregation_distribution(board$data, variable = "wealth")
    })
 }
 
