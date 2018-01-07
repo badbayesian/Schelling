@@ -228,7 +228,7 @@ plot_board <- function(board, size = 2, show_wealth = FALSE){
 #' @param board DataFrame
 #' @param size int
 #' @return ggplot object
-plot_satisfaction_board <- function(board, size = 2){
+plot_satisfaction_board <- function(board, size = 2){exagerated
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = satisfied) +
     geom_point(size = size) +
@@ -248,16 +248,15 @@ plot_satisfaction_board <- function(board, size = 2){
 #' the distributions compare, we can estimate a dispersion component for the
 #' binomial process which can hopefully approximate the schelling process.
 #' 
-#' TODO: varying neighborhood size
-#' 
 #' @param board DataFrame
 #' @param variable string
 #' @return ggplot object
-segregation_distribution <- function(board, variable = 'race'){
+segregation_distribution <- function(board, variable = 'race',
+                                     neighborhood_size = 1){
   height <- max(board$height)
   width <- max(board$width)
   
-  neighborhood <- neighbors(board, height, width, neighborhood_size = 1)
+  neighborhood <- neighbors(board, height, width, neighborhood_size)
   
   counts <- lapply(1:nrow(board), function(i)
     board[(neighborhood[[i]]$width - 1)*height + neighborhood[[i]]$height,
@@ -274,9 +273,10 @@ segregation_distribution <- function(board, variable = 'race'){
   match_lengths <- sapply(1:nrow(moments), function(i)
     length(moments$distribution[[i]]))
   
-  values <- unlist(lapply(1:nrow(moments), function(i) moments$distribution[[i]]))
+  values <- unlist(lapply(1:nrow(moments), function(i)
+    moments$distribution[[i]]))
   data <- data.frame(variable = as.factor(rep(1:nrow(moments), match_lengths)),
-                     x = names(values),
+                     x = as.numeric(names(values)),
                      y = values)
   
   plot <- ggplot(data) + aes(x = x, y = y, color = variable, group = variable) +
