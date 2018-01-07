@@ -1,5 +1,4 @@
 library(tidyverse)
-library(utils)
 
 # Schelling process is defined by a DataFrame which is used in a tidy-styled
 # system
@@ -23,16 +22,18 @@ satisfaction_check <- function(board, neighborhood, height, tolerance,
                                penalties){
   
   neighbor_counts <- lapply(1:nrow(board), function(i)
-    data.frame(race = board$race[(neighborhood[[i]]$width - 1)*height +
+    cbind(race = board$race[(neighborhood[[i]]$width - 1)*height +
                                    neighborhood[[i]]$height],
                wealth = board$wealth[(neighborhood[[i]]$width - 1)*height +
                                        neighborhood[[i]]$height]))
   
   satisfied <- sapply(1:nrow(board), function(i)
     tolerance <= (
-      penalties[1] * (tabulate(neighbor_counts[[i]]$race)[board$race[i]] - 1) /
+      penalties[1] *
+        (tabulate(neighbor_counts[[i]][ ,1])[board$race[i]] - 1) /
         (nrow(neighbor_counts[[i]]) - 1)) +
-      penalties[2] * ((tabulate(neighbor_counts[[i]]$wealth)[board$wealth[i]] - 1) /
+      penalties[2] *
+      ((tabulate(neighbor_counts[[i]][ ,2])[board$wealth[i]] - 1) /
          (nrow(neighbor_counts[[i]]) - 1)) -
       board$distance[i])
 
@@ -230,16 +231,20 @@ segregation_distribution <- function(board){
   
   neighborhood <- neighbors(board, height, width)
   
-  race_counts <- lapply(1:(height*width), function(i)
+  race_counts <- lapply(1:nrow(board), function(i)
     board$race[(neighborhood[[i]]$width - 1)*height +
                  neighborhood[[i]]$height])
   
-  matching <- sapply(1:(height*width), function(i)
+  matching <- sapply(1:nrow(board), function(i)
     tabulate(race_counts[[i]])[board$race[i]] - 1)
   
   moments <- data.frame(race = board$race, matching) %>%
     group_by(race) %>%
     summarise(distribution = list(tabulate(matching)))
+  
+  races = paste0('race_', seq(1, length(moments$distribution) - 1))
+   x <- data.frame(matching = 0:8, moments$distribution)
+   colnames(x) <- c("matching", races, 'empty')
   
   return(moments)
 }
