@@ -2,7 +2,7 @@
 
 This repository holds my Undergraduate Economic Thesis for the University of Chicago in 2016. I refactored the original code and app so that now the code follows a tidy-styled API and is faster. The old code can be found [here](https://github.com/badbayesian/schelling_extension/blob/old/schelling_old.R).
 
-The Shiny App can be found [here.](https://badbayesian.shinyapps.io/schelling/)
+The Shiny App can be found [here.](https://badbayesian.shinyapps.io/schelling_app_flex/)
 
 If you want to run the Schelling code locally you can copy the following.
 There are three major functions which define the schelling process in the code: 'init_board()', 'schelling()', and 'plot_board()'

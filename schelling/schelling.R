@@ -183,9 +183,10 @@ init_board <- function(height = 50, width = 100, filled = 0.95,
                       empty = FALSE,
                       satisfied = FALSE,
                       distance = 0,
-                      race = sample(agent_race))
+                      race = as.factor(sample(agent_race)))
   
   board$wealth[!is.na(board$race)] <- sample(agent_wealth)
+  board$wealth <- as.factor(board$wealth)
   
   return(board)
 }
@@ -200,7 +201,7 @@ plot_board <- function(board, size = 2, show_wealth = FALSE){
   if (show_wealth) {
     plot <- ggplot(na.omit(board)) +
       aes(x = width, y = height,
-          color = as.factor(race), shape = as.factor(wealth)) +
+          color = race, shape = wealth) +
       geom_point(size = size) +
       labs(title = "Schelling", x = "", y = "",
            color = "Race", shape = "Wealth") +
@@ -211,7 +212,7 @@ plot_board <- function(board, size = 2, show_wealth = FALSE){
   }
   else {
     plot <- ggplot(na.omit(board)) +
-      aes(x = width, y = height, color = as.factor(race)) +
+      aes(x = width, y = height, color = race) +
       geom_point(size = size) +
       labs(title = "Schelling", x = "", y = "", color = "Race") +
       theme_bw() +
@@ -228,7 +229,7 @@ plot_board <- function(board, size = 2, show_wealth = FALSE){
 #' @param board DataFrame
 #' @param size int
 #' @return ggplot object
-plot_satisfaction_board <- function(board, size = 2){exagerated
+plot_satisfaction_board <- function(board, size = 2){
   plot <- ggplot(na.omit(board)) +
     aes(x = width, y = height, color = satisfied) +
     geom_point(size = size) +
@@ -250,9 +251,9 @@ plot_satisfaction_board <- function(board, size = 2){exagerated
 #' 
 #' @param board DataFrame
 #' @param variable string
-#' @return ggplot object
-segregation_distribution <- function(board, variable = 'race',
-                                     neighborhood_size = 1){
+#' @return DataFrame
+neighborhood_diversity <- function(board, variable = 'race',
+                                   neighborhood_size = 1){
   height <- max(board$height)
   width <- max(board$width)
   
@@ -275,9 +276,18 @@ segregation_distribution <- function(board, variable = 'race',
   
   values <- unlist(lapply(1:nrow(moments), function(i)
     moments$distribution[[i]]))
+
   data <- data.frame(variable = as.factor(rep(1:nrow(moments), match_lengths)),
                      x = as.numeric(names(values)),
                      y = values)
+  
+  return(data)
+}
+
+plot_neighborhood_diversity <- function(board, variable = 'race',
+                                        neighborhood_size = 1){
+  
+  data <- neighborhood_diversity(board, variable, neighborhood_size)
   
   plot <- ggplot(data) + aes(x = x, y = y, color = variable, group = variable) +
     geom_point() + geom_line() +

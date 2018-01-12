@@ -1,0 +1,12 @@
+name: schelling_app_flex
+title: schelling_app_flex
+username:
+account: badbayesian
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 256268
+bundleId: 1172751
+url: https://badbayesian.shinyapps.io/schelling_app_flex/
+when: 1515716298.51759
+asMultiple: FALSE
+asStatic: FALSE
