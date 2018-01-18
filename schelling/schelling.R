@@ -8,6 +8,8 @@ library(tidyverse)
 #     - satisfaction_check
 #   - plot_board
 #   - plot_satisfaction_board
+#   - plot_neighborhood_diversity
+#     - neighborhood_diversity
 
 #' Create column of bools of whether each individual is satisfied according to
 #' `tolerance`.
@@ -34,13 +36,13 @@ satisfaction_check <- function(board, neighborhood, height, tolerance,
       penalties[1] *
         (tabulate(neighbor_counts[[i]][ ,1])[board$race[i]] - 1) /
         (nrow(neighbor_counts[[i]]) - 1)) +
-      # Weath Matching
+      # Wealth Matching
       penalties[2] *
       ((tabulate(neighbor_counts[[i]][ ,2])[board$wealth[i]] - 1) /
          (nrow(neighbor_counts[[i]]) - 1)) -
-      # Distance from business center
+      # Distance from city center
       board$distance[i])
-
+  
   return(satisfied)
 }
 
@@ -82,15 +84,15 @@ neighbors <- function(board, height, width, neighborhood_size = 1){
 #' @param neighborhood_size int
 #' @param tolerance float
 #' @param max_iterations int
-#' @param satisfied_agents flaot
-#' @param business_center list (int)
+#' @param satisfied_agents float
+#' @param city_center list (int)
 #' @param max_race_penalty float
 #' @param max_wealth_penalty float
 #' @param max_distance_penalty float
 #' @return board (DataFrame)
 schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
                       max_iterations = 100, satisfied_agents = 0.95,
-                      business_center = NA, max_race_penalty = 1,
+                      city_center = NA, max_race_penalty = 1,
                       max_wealth_penalty = 0, max_distance_penalty = 0) {
   height <- max(board$height)
   width <- max(board$width)
@@ -101,11 +103,11 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
                             neighborhood_size = neighborhood_size)
   penalties <- c(max_race_penalty, max_wealth_penalty)
   
-  # Checks if business center exists to set distance penalty
-  if (!is.na(business_center[1])) {
+  # Checks if city center exists to set distance penalty
+  if (!is.na(city_center[1])) {
     #' Euclidian distance (change to manhattan?)
-    distance <- sqrt((board$width - business_center[1])^2 +
-                       (board$height - business_center[2])^2)
+    distance <- sqrt((board$width - city_center[1])^2 +
+                       (board$height - city_center[2])^2)
     board$distance <- distance/max(distance)*max_distance_penalty
   }
   
@@ -149,7 +151,7 @@ schelling <- function(board, neighborhood_size = 1, tolerance = 0.33,
 #' @param width int
 #' @param filled float
 #' @param race_distribution list (float)
-#' @param weath_distribution list (float)
+#' @param wealth_distribution list (float)
 #' @return board (DataFrame)
 init_board <- function(height = 50, width = 100, filled = 0.95,
                        race_distribution = c(0.5, 0.5),
@@ -242,15 +244,19 @@ plot_satisfaction_board <- function(board, size = 2){
   return(plot)
 }
 
-#' Calculates the porportion of matching neighbors.
+#' Calculates the proportion of matching neighbors.
 #' 
-#' The schelling process can be conceived as binomial process in which the
-#' independence condition is broken in a complicated manner. By comparing, how
-#' the distributions compare, we can estimate a dispersion component for the
-#' binomial process which can hopefully approximate the schelling process.
+#' In a schelling process, the unit of measurement is each individual agent
+#' with race, wealth, and other characteristics. Similarly, we can parametrize
+#' the number of matching neighbors for each agent as a binomial process in
+#' which the independence condition is broken by the schelling process. By
+#' comparing the distributions at different tolerence levels, we can estimate a
+#' dispersion component for the binomial process which can approximate the
+#' schelling process.
 #' 
 #' @param board DataFrame
 #' @param variable string
+#' @param neighborhood_size int
 #' @return DataFrame
 neighborhood_diversity <- function(board, variable = 'race',
                                    neighborhood_size = 1){
@@ -270,30 +276,54 @@ neighborhood_diversity <- function(board, variable = 'race',
     group_by_at(variable) %>%
     summarise(distribution = list(table(matching))) %>%
     filter_at(vars(variable), any_vars(!is.na(.)))
-
+  
   match_lengths <- sapply(1:nrow(moments), function(i)
     length(moments$distribution[[i]]))
   
   values <- unlist(lapply(1:nrow(moments), function(i)
     moments$distribution[[i]]))
-
+  
   data <- data.frame(variable = as.factor(rep(1:nrow(moments), match_lengths)),
                      x = as.numeric(names(values)),
-                     y = values)
+                     y = values) %>%
+    group_by(variable) %>%
+    mutate(y_freq = y/sum(y))
   
   return(data)
 }
 
+
+#' Plots the proportion of matching neighbors.
+#' 
+#' @param board DataFrame
+#' @param variable string
+#' @param neighborhood_size int
+#' @param freq bool
+#' @return ggplot object
 plot_neighborhood_diversity <- function(board, variable = 'race',
-                                        neighborhood_size = 1){
+                                        neighborhood_size = 1,
+                                        freq = TRUE){
   
   data <- neighborhood_diversity(board, variable, neighborhood_size)
   
-  plot <- ggplot(data) + aes(x = x, y = y, color = variable, group = variable) +
-    geom_point() + geom_line() +
-    labs(title = "Schelling Neighborhood Count", x = "Neighbors",
-         y = "Count", color = variable) +
-    theme_bw()
-  
+  if (!freq) {
+    plot <- ggplot(data) +
+      aes(x = x, y = y, color = variable, group = variable) +
+      geom_point() + geom_line() +
+      labs(title = "Schelling Neighborhood", x = "Neighbors",
+           y = "Count", color = variable) +
+      theme_bw() +
+      scale_x_continuous(breaks = seq(0, max(data$x), 1))
+  }
+  else {
+    plot <- ggplot(data) +
+      aes(x = x, y = y_freq, color = variable, group = variable) +
+      geom_point() + geom_line() +
+      labs(title = "Schelling Neighborhood", x = "Neighbors",
+           y = "Frequency", color = variable) +
+      theme_bw() +
+      scale_x_continuous(breaks = seq(0, max(data$x), 1))
+  }
+
   return(plot)
 }

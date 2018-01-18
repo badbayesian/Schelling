@@ -60,8 +60,8 @@ tabsetPanel(type = 'tabs',
                      textInput(inputId = "wealth_distribution",
                                label = "Wealth Distribution",
                                value = "0.10, 0.70, 0.20"),
-                     textInput(inputId = "business_center",
-                               label = "Business Center",
+                     textInput(inputId = "city_center",
+                               label = "City Center",
                                value = "1, 1"),
                      sliderInput(inputId = "max_race_penalty",
                                  label = "Max Race Penalty",
@@ -83,14 +83,14 @@ tabsetPanel(type = 'tabs',
 
 checkboxInput(inputId = "show_wealth",
               label = "Show wealth distribution", value = FALSE)
+checkboxInput(inputId = "count",
+              label = "Frequency of Schelling Neighborhoods", value = FALSE)
 actionButton(inputId = "simulate", label = "Simulate")
 actionButton(inputId = "reset", label = "Reset")
 ```
 
-
 Outputs
 --------------------------------------------------------------------------------
-
 
 ```{r schelling_output}
 source(file = paste0(getwd(), "/schelling.R"))
@@ -101,13 +101,13 @@ board <- reactiveValues(data = init_board())
 observeEvent(
   eventExpr = input$simulate,
   handlerExpr = {
-    business_center <- as.numeric(strsplit(input$business_center, ",")[[1]])
+    city_center <- as.numeric(strsplit(input$city_center, ",")[[1]])
     board$data = withProgress(
       message = 'Running Schelling Algorithm...',
       schelling(board$data,
                 neighborhood_size = input$neighborhood_size,
                 tolerance = input$tolerance,
-                business_center = business_center,
+                city_center = city_center,
                 max_race_penalty = input$max_race_penalty,
                 max_wealth_penalty = input$max_wealth_penalty,
                 max_distance_penalty = input$max_distance_penalty
@@ -139,11 +139,17 @@ output$satisfaction_plot <- renderPlot({
 })
 
 output$segregation_race_plot <- renderPlot({
-  plot_neighborhood_diversity(board$data, variable = "race")
+  plot_neighborhood_diversity(board$data,
+                              variable = "race",
+                              neighborhood_size = input$neighborhood_size,
+                              freq = input$count)
 })
 
 output$segregation_wealth_plot <- renderPlot({
-  plot_neighborhood_diversity(board$data, variable = "wealth")
+  plot_neighborhood_diversity(board$data,
+                              variable = "wealth",
+                              neighborhood_size = input$neighborhood_size,
+                              freq = input$count)
 })
 
 tabsetPanel(type = "tabs", 
@@ -164,3 +170,16 @@ tabsetPanel(type = "tabs",
                                             width = "82%",
                                             height = "600px"))))
 ```
+
+### About
+
+This app simulates a schelling process where users can change the size of the board, and tolerance level. The app similarly simulates an extended schelling algorithm which allows users to change the number of races, neighborhood size, and changes in non-racial preferences.
+
+Agents on the board can now have opinion about the surrounding wealth of neighbors amd distance from a city center. Currently, wealth behaves similarly to race in that different wealth levels are neither ordinal nor cardinal (high wealth are equally dissatisfied with mid or low wealth). Similarly, each agent are equally dissatisfied with other agents (high and low wealth can be equally dissatisfied with each other.)
+
+
+
+
+
+
+

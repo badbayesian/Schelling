@@ -54,6 +54,7 @@ ui <- dashboardPage(
                                      label = "Max Race Penalty",
                                      min = 0,
                                      max = 1,
+                                     
                                      value = 1),
                          sliderInput(inputId = "max_wealth_penalty",
                                      label = "Max Wealth Penalty",
